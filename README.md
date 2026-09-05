@@ -11,7 +11,9 @@ nap-qq/
 │  ├─ config.py            # .env 配置加载
 │  ├─ message_parser.py    # OneBot 消息解析
 │  ├─ qwen_client.py       # Qwen 调用封装
-│  └─ onebot_client.py     # OneBot WebSocket 客户端
+│  ├─ onebot_client.py     # OneBot WebSocket 客户端
+│  ├─ reminder_service.py  # 定时提醒内容和群发送
+│  └─ scheduler.py          # 定时任务调度
 ├─ tests/                  # 本地单元测试
 ├─ .env                    # 本机配置，不提交
 ├─ .env.example            # 配置模板
@@ -138,7 +140,30 @@ python -m compileall -q bot tests
 Ctrl+C
 ```
 
-## 9. 环境变量总览
+## 9. 定时群提醒
+
+定时提醒默认使用北京时间 `Asia/Shanghai`，只发送到 `.env` 中配置的群号：
+
+```dotenv
+REMINDER_ENABLED=true
+REMINDER_GROUP_IDS=1036995638
+REMINDER_TIMEZONE=Asia/Shanghai
+REMINDER_MORNING_TIME=09:00
+REMINDER_NIGHT_TIME=21:00
+REMINDER_WATER_MESSAGES=该喝水啦～||记得补充水分哦！||工作辛苦了，喝口水吧～
+```
+
+提醒时间和内容：
+
+| 时间 | 内容 | Qwen |
+|---|---|---|
+| 09:00 | 带日期、星期的早间提醒；天气暂未接入 | 调用 |
+| 09:15 至 20:45（每 15 分钟） | 从配置的多条文本中随机选择一条喝水提醒 | 不调用 |
+| 21:00 | 早点休息提醒 | 调用 |
+
+启动晚于某个时间点时不会补发已经错过的提醒。`REMINDER_GROUP_IDS` 使用逗号分隔多个群号；普通群消息、@其他成员和未配置群不会触发或接收这些提醒。
+
+## 10. 环境变量总览
 
 | 变量 | 默认值 | 作用 |
 |---|---|---|
@@ -150,3 +175,9 @@ Ctrl+C
 | `QWEN_TIMEOUT` | `60` | Qwen 请求超时时间（秒） |
 | `QWEN_SYSTEM_PROMPT` | 内置中文提示词 | Qwen 系统提示词 |
 | `ECHO_REPLY_GROUP_MESSAGES` | `true` | 是否启用仅 @机器人的群聊回复 |
+| `REMINDER_ENABLED` | `true` | 是否启用定时群提醒 |
+| `REMINDER_GROUP_IDS` | 空 | 定时提醒目标群号，逗号分隔 |
+| `REMINDER_TIMEZONE` | `Asia/Shanghai` | 定时任务时区 |
+| `REMINDER_MORNING_TIME` | `09:00` | 早间提醒时间 |
+| `REMINDER_NIGHT_TIME` | `21:00` | 晚间提醒时间 |
+| `REMINDER_WATER_MESSAGES` | 多条 `||` 分隔的喝水提示 | 每次随机选择一条 |
